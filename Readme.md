@@ -1,97 +1,96 @@
-# SPARQL cardinality estimation using Graph Neural Networks and Knowledge Graph Embeddings
+# GNCE - Cardinality Estimation over Knowledge Graphs with Embeddings and Graph Neural Networks
 
-## Introduction
-This repository contains the code alongside the paper "SPARQL cardinality estimation using Graph Neural Networks and Knowledge Graph Embeddings".
+This repository contains the implementation of GNCE, a method to predict the cardinality
+of conjunctive queries over Knowledge Graphs. It is based on Graph Neural Networks
+and Knowledge Graph Embeddings and is implemented in PyTorch. 
 
-It can be used to train and create a machine learning model that predicts cardinalities of BGP queries over rdf graphs.
+## Table of Contents
 
-## Requirements
+- [Installation](#installation)
+- [Usage](#usage)
+- [Comparing to related Approaches](#comparing-to-related-approaches)
+- [License](#license)
 
-The following requirements need to be met in order to use the repository:
+## Installation
 
-- Virtuoso Conductor needs to be installed and running
-- python 3.8.x installed
-- python packages
-  - sklearn 1.1.2
-  - requests 2.28.1
-  - torch 1.12.1
-  - torch geometric 2.1.0
-  - pyrdf2vec 0.2.3
-  - numpy 1.23
-  - matplotlib
-  - pyodbc 4.0.34
-  - tqdm
-  - rdflib 6.1.1
-  - SPARQLWrapper 2.0.0
-  - pandas
+### Requirements
 
-## Workflow
+You need to have Python 3 installed. The code was tested with Python 3.8.10
 
-The initial assumption is that you have given a rdf graph in the .ttl or .nt format.
+### Setup
 
-For that graph, we first calculate statistics as well as embeddings for each entity.
-After that, random test queries are generated and performed against the graph to acquire the
-true cardinality.
-Lastly, a model is trained on the queries to estimate the cardinalities.
+You can install the required packages with the following command:
 
-In the following is described how to perform those steps.
+```sh
+$ pip install -r requirements.txt
+```
+You might adapt the version of the torch and torch-geometric packages to your needs,
+based on your CUDA version.
 
-### Embeddings and Statistics Generation
+Note that we have included an adapted version of the pyrdf2vec code from
+https://github.com/IBCNServices/pyRDF2Vec that saves the random walks to disk for 
+scaling to large graphs on systems with limited RAM.
+## Usage
 
-The function `get_embeddings` in `embeddings_generator.py` is used to calculate occurences for each entity as well as 
-numerical embeddings using RDF2VEC.
-The functions receives a `dataset_name`, which is used to store the statistics and rdf2vec model like "dataset_name_embeddings.json"
-The second argument is the path to the rdf file of the KG. The arguments `remote` and `sparql_endpoint` are optional.
-`remote` is a flag to determine whether an in memory access to the rdf file should be used(False) or whether the rdf graph
-is served over a SpARQL Endpoint(True). In the latter case `sparql_endpoint` can be used to set the correct url. Lastly, he parameter
-`entities` can be used to provide a list of entities for whom entities should be calculated. If not set, all found entities
-in the graph will be used.
-
-The function will first contact the rdf graph to get the total number of triples each entity participated in(occurence).
-Next, it will calculate embeddings for each given entity. Lastly, the occurences will be saved together with the embeddings
-as a dict to a json file of the form
-{"entity_1":{"embedding":[0.8,...], "occurence":21},...}
-
-### Query Generation
-
-To produce a dataset of test and train queries, the function `get_testdata` in `query_generator.py` can be used. The
-first argument `graphfile` is again the path to the .ttl file, `dataset_name` is the name of the graph or dataset and used 
-to store the generated queries in a file `dataset_name_test_data.json`. `n_triples` denotes how many triples are present
-in the query. Currently, the generated queries are only star shaped queries. `n_queries` denotes how many queries should
-be generated. Finally, `endpoint_url` is the url where the SPARQL Endpoint serving the rdf graph is hosted.
-The function generates and saves the queries in a json dict of the form
-[{"x": ["entity_1,...], "y": 232, "query": "SELECT * ..", "triples": [["entity_3, ?p1, "entity_14"], [...],..]}]. x is a
-list of all occuring bounded entities in the query grapgh, y is the true cardinality of the query performed over the rdf
-graph, query is a string of the raw SPARQL query, and triples is a list of lists containing each subject, predicate and
-object of the triples in the query.
-
-### Model Training
-
-Currently, training of 2 different kinds of models is supported. The first kind is a very simple model while the second
-makes use of a Graph Neural Network.
-
-### Simple model
-
-In the simple model, the true cardinality is estimated as
-
-<img src="simple_model_probability.svg">
-
-Here, the product goes over all N entities in the query graph(irrelevant of their order). o_i is the occurence of 
-entity i, |G| is the number of triples in the graph, e_i is the embedding of entity i and f is an in general arbitrary
-function. In our case, f is realized as k-nearest neighbor regression.
-The simple model can be trained using `cardinality_estimator.train_simple_model` function. The function receives a trainset
-and a testset of queries. The cardinality for each query in the trainset is estimated using the above product rule. Afterwards,
-a k-nearest neighbor model is fitted to the predicted cardinalities and the true cardinalities. Finally, this model is
-evaluated on the given testset in terms of mean absolute error and mean q-error.
-
-### GNN based model 
-
-The simple model has a few shortcomings. First, it does ignure the graph structure completely. Thus, different queries 
-with the same entities will be mapped to the same cardinality. Further, it has no learnable parameters in calculating
-the conditional probabilities and just assumes that the embeddings are enough to estimate the cardinality.
-To eliviate the problem, a GNN is used instead of the above. The cardinality is then estimated as C = GNN(query).
-The GNN is implemented using pytorch geometric. To train the GNN, the function `cardinality_estimator.train_GNN` can be used.
-The function again recevies a train and a testset of queries. A GNN architecture is trained on the trainset and evaluated
-on the testset, again in terms of MAE and QError. 
+### Data
+We except you to have a Knowledge Graph in the .ttl or .nt format, as well as
+it served over a SPARQL endpoint. <br>
+We further expect you to have a file containing the queries you want to predict in
+the following format:
+```
+{"x": ["http://example.org/entity1", ...], "y":4, 
+"query": ["SELECT * WHERE..."], 
+"triples": [["http://example.org/entity1", "http://example.org/predicate1", "http://example.org/entity2"], ...]}
+```
+}
+<br>
+Here, "x" is the list of entities that are part of the query, "y" is the cardinality of the query,
+"query" is the SPARQL query, and "triples" is the list of triples that are part of the query.<br>
 
 
+### Embedding Generation
+The first step is to generate embeddings for the entities occurring in the given queries.
+For that, the file `embeddings_generator.py` is used. In the corresponding
+main function, set the value of QUERY_FILE_PATH to the path of the file containing the queries
+in the above format, set KG_FILE_PATH to the path of the Knowledge Graph file(.ttl or .nt), 
+and set KG_ENDPOINT to the SPARQL endpoint of the Knowledge Graph. KG_NAME is the name you 
+assign to your dataset. <br>
+The resulting will be saved relative to the file,
+under Datasets/KG_NAME/statistics. One file will be saved per entity containing the embeddings
+as well as the occurrence of the entity. <br>
+
+Make sure that the folder structure exists like:
+```
+/Datasets
+    /KG_NAME
+        /Results
+        /query_type
+            query_file.json
+        /statistics
+            /entity1.json
+            /entity2.json
+            ...
+```
+
+### Training
+
+Next, you can train the GNN model to predict the cardinalities. 
+For that, the file `run_experiments.py` is used.
+Here, set the dataset as well as query_type to the same values as in the previous step.
+t.If The model will be trained on 80% of the given queries and evaluated on the remaining 20%. 
+The best model will be saved under ```model.pth```. Furthermore,
+the predictions, true cardinalities, query sizes and prediction times of the test set
+will be saved under
+```Datasets/KG_NAME/Results``` as 4 separate nummpy arrays as well as in a json file.
+
+
+### Comparing to related Approaches
+The repository includes code from LMKG, and functionality to connect to code from 
+LSS and GCARE. For that the run_LMKG and run_GCARE blogs as well as the code in LSS
+can be used. Make sure to install the GCARE (https://github.com/yspark-dblab/gcare)
+and LSS code.
+
+
+## License
+
+This project is licensed under the AGPL-3.0 license - see the LICENSE file for details.

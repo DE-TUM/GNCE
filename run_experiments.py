@@ -26,7 +26,7 @@ run_GNCE = True
 run_GCARE = False
 
 # Whether to perform full inductive training
-inductive = 'false' # Choices are 'false' or 'full'. false means normal training and full means ealuating without embeddings
+inductive = 'false' # Choices are 'false' or 'full'. false means normal training and full means evaluating without embeddings
 
 
 if run_LMKG:
@@ -71,7 +71,3 @@ if run_GCARE:
     os.chdir('/home/tim/cardinality_estimator/')
     run_gcare(dataset=dataset, query_type=query_type, eval_folder=starttime, query_filename=query_filename,
                inductive=inductive)
-
-
-
-# print("**** Starting LSS ****")
