@@ -93,22 +93,4 @@ def query_to_gcare(query, query_idx, id_to_id_mapping, id_to_id_mapping_predicat
             f.write("\n")
 
 
-dataset = 'yago'
-
-
-with open(f"/home/tim/Datasets/{dataset}/star/Joined_Queries.json") as f:
-    data = json.load(f)
-
-with open(f"/home/tim/Datasets/{dataset}/id_to_id_mapping.json", "r") as f:
-    id_to_id_mapping = json.load(f)
-with open(f"/home/tim/Datasets/{dataset}/id_to_id_mapping_predicate.json", "r") as f:
-    id_to_id_mapping_predicate = json.load(f)
-
-for query in data[:]:
-    print(query)
-    query_to_gcare(query["triples"], 0, id_to_id_mapping=id_to_id_mapping,
-                   id_to_id_mapping_predicate= id_to_id_mapping_predicate, dataset=dataset, card = query["y"])
-    break
-
-
 

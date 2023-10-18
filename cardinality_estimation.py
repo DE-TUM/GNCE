@@ -55,11 +55,11 @@ class cardinality_estimator():
     Base class for estimating cardinality for a given dataset.
 
     """
-    def __init__(self, dataset_name, graphfile, sim_measure):
+    def __init__(self, dataset_name, graphfile, sim_measure, DATASETPATH):
         self.dataset_name = dataset_name
         self.graphfile = graphfile
         self.sim_measure = sim_measure
-
+        self.DATASETPATH = DATASETPATH
         #self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.device = "cpu"
 
@@ -72,7 +72,7 @@ class cardinality_estimator():
                     self.statistics = json.load(f)
             else:
                 # Load Statistics from disk
-                self.statistics = StatisticsLoader(os.path.join("/home/tim/Datasets", dataset_name, "statistics"))
+                self.statistics = StatisticsLoader(os.path.join(self.DATASETPATH, dataset_name, "statistics"))
             print("Successfully loaded statistics")
         except:
             print("No statistics found")
@@ -82,7 +82,7 @@ class cardinality_estimator():
 
 
     def train_GNN(self, train_data, test_data, epochs=100, train=True, eval_folder=None, inductive='false',
-                  preparation_time: float = None, batch_size=32):
+                  preparation_time: float = None, batch_size=32, DATASETPATH=None):
         """
         Train the model on the given train_data, or evaluate on the given test_data
         :param train_data: training data in the form of a list of query dicts
@@ -98,7 +98,7 @@ class cardinality_estimator():
         # Folder for Results
         starttime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
         starttime = eval_folder
-        Path(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}").mkdir(parents=True, exist_ok=True)  # Create folder if it doesn't exist
+        Path(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}").mkdir(parents=True, exist_ok=True)  # Create folder if it doesn't exist
 
         print("Starting Training...")
         test_mae = []
@@ -269,21 +269,20 @@ class cardinality_estimator():
                 if (np.mean(q_errors) < min_q_error):
                     print("New smallest Q-Error, saving model and statistics")
                     #torch.save(model.state_dict(), "model.pth")
-                    torch.save(model.state_dict(), f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/model.pth")
+                    torch.save(model.state_dict(), f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/model.pth")
 
                     min_q_error = np.mean(q_errors)
-                    np.save(os.path.join("/home/tim/Datasets", self.dataset_name, "Results", "preds.npy"), preds)
-                    np.save(os.path.join("/home/tim/Datasets", self.dataset_name, "Results", "gts.npy"), gts)
-                    np.save(os.path.join("/home/tim/Datasets", self.dataset_name, "Results", "sizes.npy"), sizes)
+                    np.save(os.path.join(DATASETPATH, self.dataset_name, "Results", "preds.npy"), preds)
+                    np.save(os.path.join(DATASETPATH, self.dataset_name, "Results", "gts.npy"), gts)
+                    np.save(os.path.join(DATASETPATH, self.dataset_name, "Results", "sizes.npy"), sizes)
                 if (np.mean(abs_errors) < min_mae):
-                    #torch.save(model.state_dict(), "model_mae.pth")
-                    torch.save(model.state_dict(), f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/model_mae.pth")
+                    torch.save(model.state_dict(), f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/model_mae.pth")
 
                     min_mae = np.mean(abs_errors)
 
 
         if train:
-            with open(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/training_progress.json", 'w') as file:
+            with open(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/training_progress.json", 'w') as file:
                 json.dump(training_progress, file, indent=4)
 
 
@@ -293,14 +292,14 @@ class cardinality_estimator():
         repo = git.Repo(search_parent_directories=True)
         sha = repo.head.object.hexsha
         branch = repo.active_branch.name.split("/")[-1]
-        with open(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/git_diff.txt", "w") as text_file:
+        with open(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/git_diff.txt", "w") as text_file:
             text_file.write(f"Current branch: {branch}\n")
             text_file.write(f"Git hash: {sha}\n\n")
             text_file.write("\n\n\n\n\n\n\n\n")
             text_file.write(
                 f"Diff between commit stated above and code that is currently executed:\n\n{repo.git.diff()}")
 
-        model.load_state_dict(torch.load(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/model.pth"))
+        model.load_state_dict(torch.load(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/model.pth"))
 
         abs_errors = []
         q_errors = []
@@ -355,30 +354,30 @@ class cardinality_estimator():
         print("Mean execution time total: ", np.mean(exec_times_total))
 
 
-        np.save(os.path.join(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/preds.npy"), preds)
-        np.save(os.path.join(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/gts.npy"), gts)
-        np.save(os.path.join(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/sizes.npy"), sizes)
-        np.save(os.path.join(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/pred_times.npy"), exec_times)
-        np.save(os.path.join(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/pred_times_total.npy"), exec_times_total)
+        np.save(os.path.join(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/preds.npy"), preds)
+        np.save(os.path.join(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/gts.npy"), gts)
+        np.save(os.path.join(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/sizes.npy"), sizes)
+        np.save(os.path.join(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/pred_times.npy"), exec_times)
+        np.save(os.path.join(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/pred_times_total.npy"), exec_times_total)
 
-        with open(f"/home/tim/Datasets/{self.dataset_name}/Results/{starttime}/results.json", 'w') as file:
+        with open(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/results.json", 'w') as file:
             json.dump(result_data, file, indent=4)
 
         return n_atoms, start_time_training, training_end_time
 
 def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: str, train: bool = True,
-               inductive='false'):
+               inductive='false', DATASETPATH=None):
 
     # Total counter for preparation, i.e. data laoding and transforming to PyG graphs
     preparation_time = 0
     assert inductive in ['false', 'full']
-    model = cardinality_estimator(dataset, None, sim_measure="cosine")
+    model = cardinality_estimator(dataset, None, sim_measure="cosine", DATASETPATH=DATASETPATH)
 
     eval_folder = Path(f"{eval_folder}/GNCE")
 
     start_time = time.time()
     if inductive == 'false':
-        with open(f"/home/tim/Datasets/{dataset}/{query_type}/Joined_Queries.json") as f:
+        with open(f"{DATASETPATH}{dataset}/{query_type}/Joined_Queries.json") as f:
             data = json.load(f)
 
         random.Random(4).shuffle(data)
@@ -386,9 +385,9 @@ def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: s
         test_data = data[int(0.8 * len(data)):][:100]
 
     else:
-        with open(f"/home/tim/Datasets/{dataset}/{query_type}/disjoint_train.json") as f:
+        with open(f"{DATASETPATH}{dataset}/{query_type}/disjoint_train.json") as f:
             train_data = json.load(f)
-        with open(f"/home/tim/Datasets/{dataset}/{query_type}/disjoint_test.json") as f:
+        with open(f"{DATASETPATH}{dataset}/{query_type}/disjoint_test.json") as f:
             test_data = json.load(f)
         train_data = train_data[:]
         test_data = test_data[:]
@@ -401,7 +400,7 @@ def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: s
 
 
     n_atoms, start_time_training, end_time_training = model.train_GNN(train_data, test_data, epochs=2, train=train, eval_folder=eval_folder, inductive=inductive,
-                    preparation_time=preparation_time)
+                    preparation_time=preparation_time, DATASETPATH=DATASETPATH)
 
     return n_atoms, start_time_training, end_time_training
 

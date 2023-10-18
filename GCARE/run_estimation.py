@@ -9,27 +9,28 @@ import random
 from pathlib import Path
 from tqdm import tqdm
 
-def run_gcare(dataset, query_type, eval_folder, query_filename, inductive):
+def run_gcare(dataset, query_type, eval_folder, query_filename, inductive, DATASETPATH=None):
     methods = ['wj', 'cset', 'jsub', 'impr']
     #methods = ['impr']
+    assert DATASETPATH is not None
 
     # Loading Queries and IDX transform mappings
     print(f'Loading Queries from: ')
-    print(f"/home/tim/Datasets/{dataset}/{query_type}/{query_filename}")
-    with open(f"/home/tim/Datasets/{dataset}/{query_type}/{query_filename}") as f:
+    print(f"{DATASETPATH}{dataset}/{query_type}/{query_filename}")
+    with open(f"{DATASETPATH}{dataset}/{query_type}/{query_filename}") as f:
         data = json.load(f)
     # Same split as other methods
     if not inductive == 'full':
         random.Random(4).shuffle(data)
         data = data[int(0.8 * len(data)):]
     else:
-        with open(f"/home/tim/Datasets/{dataset}/{query_type}/{query_filename}") as f:
+        with open(f"{DATASETPATH}{dataset}/{query_type}/{query_filename}") as f:
             data = json.load(f)
         pass
 
-    with open(f"/home/tim/Datasets/{dataset}/id_to_id_mapping.json", "r") as f:
+    with open(f"{DATASETPATH}{dataset}/id_to_id_mapping.json", "r") as f:
         id_to_id_mapping = json.load(f)
-    with open(f"/home/tim/Datasets/{dataset}/id_to_id_mapping_predicate.json", "r") as f:
+    with open(f"{DATASETPATH}{dataset}/id_to_id_mapping_predicate.json", "r") as f:
         id_to_id_mapping_predicate = json.load(f)
 
     for method in methods:
@@ -39,7 +40,7 @@ def run_gcare(dataset, query_type, eval_folder, query_filename, inductive):
         sizes = []
         result_data = []
         pred_times = []
-        Path(f"/home/tim/Datasets/{dataset}/Results/{eval_folder}/{method}").mkdir(parents=True, exist_ok=True)
+        Path(f"{DATASETPATH}{dataset}/Results/{eval_folder}/{method}").mkdir(parents=True, exist_ok=True)
 
 
         # Predicting top n queries of the testset
@@ -58,13 +59,13 @@ def run_gcare(dataset, query_type, eval_folder, query_filename, inductive):
             query["y_pred"] = y_pred
             query["exec_time_total"] = pred_time
             result_data.append(query)
-        np.save(os.path.join(f"/home/tim/Datasets/{dataset}/Results/{eval_folder}/{method}/preds.npy"), preds)
-        np.save(os.path.join(f"/home/tim/Datasets/{dataset}/Results/{eval_folder}/{method}/gts.npy"), gts)
-        np.save(os.path.join(f"/home/tim/Datasets/{dataset}/Results/{eval_folder}/{method}/sizes.npy"), sizes)
-        np.save(os.path.join(f"/home/tim/Datasets/{dataset}/Results/{eval_folder}/{method}/pred_times.npy"), pred_times)
+        np.save(os.path.join(f"{DATASETPATH}{dataset}/Results/{eval_folder}/{method}/preds.npy"), preds)
+        np.save(os.path.join(f"{DATASETPATH}{dataset}/Results/{eval_folder}/{method}/gts.npy"), gts)
+        np.save(os.path.join(f"{DATASETPATH}{dataset}/Results/{eval_folder}/{method}/sizes.npy"), sizes)
+        np.save(os.path.join(f"{DATASETPATH}{dataset}/Results/{eval_folder}/{method}/pred_times.npy"), pred_times)
 
 
-        with open(f"/home/tim/Datasets/{dataset}/Results/{eval_folder}/{method}/results.json", 'w') as file:
+        with open(f"{DATASETPATH}{dataset}/Results/{eval_folder}/{method}/results.json", 'w') as file:
             json.dump(result_data, file, indent=4)
 
 def predict(method:str, dataset: str):
@@ -108,8 +109,3 @@ def predict(method:str, dataset: str):
         del os.environ['GCARE_BSK_BUDGET']
 
     return pred_cardinality, prediction_time
-
-
-if __name__ == "__main__":
-    predict('wj', 'yago')
-
