@@ -17,13 +17,13 @@ from datetime import datetime
 
 if __name__ == "__main__":
     # Define dataset and query type to use
-    dataset = "swdf"
-    query_type = "star"
+    dataset = "wikidata"
+    query_type = "path"
 
     starttime = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    initiate_training = False
-    pull_training_results = True
+    initiate_training = True
+    pull_training_results = False
 
     if initiate_training:
         # Transform the queries to G-Care format and save locally in LSS directory
