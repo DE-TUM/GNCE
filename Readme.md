@@ -48,6 +48,10 @@ Here, "x" is the list of entities that are part of the query, "y" is the cardina
 "query" is the SPARQL query, and "triples" is the list of triples that are part of the query.<br>
 
 
+#### Example Data
+The used datasets, queries and results from the paper can boe found under the following link:
+XXX
+
 ### Embedding Generation
 The first step is to generate embeddings for the entities occurring in the given queries.
 For that, the file `embeddings_generator.py` is used. In the corresponding
@@ -63,6 +67,8 @@ Make sure that the folder structure exists like:
 ```
 /Datasets
     /KG_NAME
+        /graph
+            graph.nt
         /Results
         /query_type
             query_file.json
@@ -76,8 +82,7 @@ Make sure that the folder structure exists like:
 
 Next, you can train the GNN model to predict the cardinalities. 
 For that, the file `run_experiments.py` is used.
-Here, set the dataset as well as query_type to the same values as in the previous step.
-t.If The model will be trained on 80% of the given queries and evaluated on the remaining 20%. 
+Here, set the dataset as well as query_type to the same values as in the previous step. The model will be trained on 80% of the given queries and evaluated on the remaining 20%. 
 The best model will be saved under ```model.pth```. Furthermore,
 the predictions, true cardinalities, query sizes and prediction times of the test set
 will be saved under
@@ -86,9 +91,9 @@ will be saved under
 
 ### Comparing to related Approaches
 The repository includes code from LMKG, and functionality to connect to code from 
-LSS and GCARE. For that the run_LMKG and run_GCARE blogs as well as the code in LSS
+LSS and GCARE. For that the run_LMKG and run_GCARE functions in run_experiments as well as the code in LSS
 can be used. Make sure to install the GCARE (https://github.com/yspark-dblab/gcare)
-and LSS code.
+and LSS (https://github.com/Kangfei/LSS) code as instructed there.
 
 
 ## License

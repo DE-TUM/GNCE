@@ -85,19 +85,6 @@ def predict(method:str, dataset: str):
                            check=True, shell=True, stdout=subprocess.PIPE)
     result = result.stdout.decode()
 
-    # command = f'./run-exp.sh {method} {dataset} {p} {seed} {repeat} {result_dir}'
-    # process = subprocess.Popen(f'{command} | grep -A 2 "Average Time"', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True)
-    # # Wait for the subprocess to finish
-    # stdout, stderr = process.communicate()
-    # # Optionally, you can check the return code to ensure the process completed successfully
-    # if process.returncode != 0:
-    #     print(f'Subprocess failed with error: {stderr.decode()}')
-    # # Ensure the process is cleaned up
-    # process.terminate()  # This sends SIGTERM to the process, if it is still running
-    # process.wait()  # This waits for the process to terminate
-    # result = stdout.decode()
-
-
 
     lines = result.strip().split('\n')
     predicted_cardinalities = np.asarray(lines[2].split(' ')[1:], dtype=float)
