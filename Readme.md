@@ -50,7 +50,7 @@ Here, "x" is the list of entities that are part of the query, "y" is the cardina
 
 #### Example Data
 The used datasets, queries and results from the paper can boe found under the following link:
-XXX
+https://nx36303.your-storageshare.de/s/wMbJJ2JLnkXcSE6
 
 ### Embedding Generation
 The first step is to generate embeddings for the entities occurring in the given queries.
