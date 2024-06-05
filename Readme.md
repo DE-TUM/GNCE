@@ -4,6 +4,8 @@ This repository contains the implementation of GNCE, a method to predict the car
 of conjunctive queries over Knowledge Graphs. It is based on Graph Neural Networks
 and Knowledge Graph Embeddings and is implemented in PyTorch. 
 
+Paper: https://dl.acm.org/doi/abs/10.1145/3639299
+
 ## Table of Contents
 
 - [Installation](#installation)
