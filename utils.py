@@ -179,7 +179,7 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
             raise
         # If predicate is a variable, add the variable embedding to the edge attributes
         if "?" in triple[1]:
-            p = 237
+            p = "237"
             try:
                 v = variable_embedding_edge
                 if shuffled:

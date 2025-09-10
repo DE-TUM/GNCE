@@ -6,7 +6,7 @@ import numpy as np
 #from pyrdf2vec.embedders import Word2Vec
 #from pyrdf2vec.walkers import RandomWalker
 import matplotlib.pyplot as plt
-import pyodbc
+#import pyodbc
 from sklearn.linear_model import LinearRegression
 from tqdm import tqdm
 from sklearn.gaussian_process.kernels import DotProduct, WhiteKernel
@@ -18,7 +18,7 @@ from sklearn.ensemble import RandomForestRegressor, AdaBoostRegressor, GradientB
 import torch.nn as nn
 from datetime import datetime
 from pathlib import Path
-import git
+#import git
 from torch_geometric.loader import DataLoader
 
 
@@ -289,15 +289,15 @@ class cardinality_estimator():
         training_end_time = time.time()
 
         # Evaluation of the best model on the test set
-        repo = git.Repo(search_parent_directories=True)
-        sha = repo.head.object.hexsha
-        branch = repo.active_branch.name.split("/")[-1]
-        with open(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/git_diff.txt", "w") as text_file:
-            text_file.write(f"Current branch: {branch}\n")
-            text_file.write(f"Git hash: {sha}\n\n")
-            text_file.write("\n\n\n\n\n\n\n\n")
-            text_file.write(
-                f"Diff between commit stated above and code that is currently executed:\n\n{repo.git.diff()}")
+        #repo = git.Repo(search_parent_directories=True)
+        #sha = repo.head.object.hexsha
+        #branch = repo.active_branch.name.split("/")[-1]
+        #with open(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/git_diff.txt", "w") as text_file:
+        #    text_file.write(f"Current branch: {branch}\n")
+        #    text_file.write(f"Git hash: {sha}\n\n")
+        #    text_file.write("\n\n\n\n\n\n\n\n")
+        #    text_file.write(
+        #        f"Diff between commit stated above and code that is currently executed:\n\n{repo.git.diff()}")
 
         model.load_state_dict(torch.load(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/model.pth"))
 
@@ -363,10 +363,10 @@ class cardinality_estimator():
         with open(f"{DATASETPATH}{self.dataset_name}/Results/{starttime}/results.json", 'w') as file:
             json.dump(result_data, file, indent=4)
 
-        return n_atoms, start_time_training, training_end_time
+        return n_atoms, start_time_training, training_end_time, preds, gts, sizes
 
 def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: str, train: bool = True,
-               inductive='false', DATASETPATH=None):
+               inductive='false', DATASETPATH=None, n_train_queries=None, n_test_queries=None, epochs=None):
 
     # Total counter for preparation, i.e. data laoding and transforming to PyG graphs
     preparation_time = 0
@@ -381,8 +381,14 @@ def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: s
             data = json.load(f)
 
         random.Random(4).shuffle(data)
-        train_data = data[:int(0.8 * len(data))][:100]
-        test_data = data[int(0.8 * len(data)):][:100]
+        if n_train_queries is not None:
+            train_data = data[:int(0.8 * len(data))][:n_train_queries]
+        else:
+            train_data = data[:int(0.8 * len(data))][:]
+        if n_test_queries is not None:
+            test_data = data[int(0.8 * len(data)):][:n_test_queries]
+        else:
+            test_data = data[int(0.8 * len(data)):][:]
 
     else:
         with open(f"{DATASETPATH}{dataset}/{query_type}/disjoint_train.json") as f:
@@ -399,10 +405,10 @@ def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: s
     print("Evaluating on: ", len(test_data), " queries")
 
 
-    n_atoms, start_time_training, end_time_training = model.train_GNN(train_data, test_data, epochs=2, train=train, eval_folder=eval_folder, inductive=inductive,
+    n_atoms, start_time_training, end_time_training, preds, gts, sizes = model.train_GNN(train_data, test_data, epochs=epochs, train=train, eval_folder=eval_folder, inductive=inductive,
                     preparation_time=preparation_time, DATASETPATH=DATASETPATH)
 
-    return n_atoms, start_time_training, end_time_training
+    return n_atoms, start_time_training, end_time_training, preds, gts, sizes
 
 
 

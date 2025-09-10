@@ -12,8 +12,7 @@ import os
 import sys
 import time
 
-# Adding edited version of pyrdf2vec to path
-sys.path.append("/home/tim/pyRDF2Vec/pyrdf2vec")
+# Removed conflicting pyrdf2vec path that was interfering with package imports
 
 def uri_to_id(uri):
     return uri.split('/')[-1]

@@ -1,0 +1,43 @@
+[project]
+name = "GNCE"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+  "pyrdf2vec==0.2.3",
+  "rdflib",
+  "cachetools",
+  "easydict>=1.13",
+  "gensim>=4.3.0,<4.4.0",
+  "matplotlib>=3.10.5",
+  "nest_asyncio",
+  "ninja>=1.13.0",
+  # macOS universal2 wheels use +pt28
+  "pyg-lib==0.4.0+pt28 ; sys_platform == 'darwin'",
+  # Linux/Windows CPU wheels use +pt28cpu
+  "pyg-lib==0.4.0+pt28cpu ; sys_platform != 'darwin'",
+  "scikit-learn>=1.7.1",
+  "scipy>=1.9.0,<1.12.0",
+  "torch",
+  "torch-geometric",
+  "torch-scatter",
+]
+
+[tool.uv.sources]
+# Force CPU-only PyTorch wheels
+torch = [{ index = "pytorch-cpu" }]
+# Tell uv where to find the PyG family wheels matching Torch 2.8 + CPU
+pyg_lib = [{ index = "pyg-flat-280-cpu" }]
+torch_scatter = [{ index = "pyg-flat-280-cpu" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pyg-flat-280-cpu"
+url = "https://data.pyg.org/whl/torch-2.8.0+cpu.html"
+format = "flat"
+explicit = true
