@@ -16,7 +16,8 @@ dependencies = [
   # macOS universal2 wheels use +pt28
   "pyg-lib==0.4.0+pt28 ; sys_platform == 'darwin'",
   # Linux/Windows CPU wheels use +pt28cpu
-  "pyg-lib==0.4.0+pt28cpu ; sys_platform != 'darwin'",
+  "pyg-lib==0.4.0+pt28cpu ; sys_platform == 'linux'",
+  "pyg-lib==0.4.0+pt28cpu ; sys_platform == 'win32'",
   "scikit-learn>=1.7.1",
   "scipy>=1.9.0,<1.12.0",
   "torch",
@@ -27,8 +28,8 @@ dependencies = [
 [tool.uv.sources]
 # Force CPU-only PyTorch wheels
 torch = [{ index = "pytorch-cpu" }]
-# Tell uv where to find the PyG family wheels matching Torch 2.8 + CPU
-pyg_lib = [{ index = "pyg-flat-280-cpu" }]
+# Fix: use hyphen to match the dependency name
+pyg-lib = [{ index = "pyg-flat-280-cpu" }]
 torch_scatter = [{ index = "pyg-flat-280-cpu" }]
 
 [[tool.uv.index]]
