@@ -82,7 +82,7 @@ class cardinality_estimator():
 
 
     def train_GNN(self, train_data, test_data, epochs=100, train=True, eval_folder=None, inductive='false',
-                  preparation_time: float = None, batch_size=32, DATASETPATH=None):
+                  preparation_time: float = None, batch_size=32, DATASETPATH=None, random_embeddings=False, use_occurrence=True, max_occurrence=None):
         """
         Train the model on the given train_data, or evaluate on the given test_data
         :param train_data: training data in the form of a list of query dicts
@@ -137,10 +137,10 @@ class cardinality_estimator():
                 # Get graph representation of query
                 if inductive == 'full':
                     data, n_atoms = get_query_graph_data_new(datapoint, self.statistics, self.device, unknown_entity='false',
-                                                    n_atoms=n_atoms)
+                                                    n_atoms=n_atoms, random_embeddings=random_embeddings, use_occurrence=use_occurrence, max_occurrence=max_occurrence)
                 else:
                     data, n_atoms = get_query_graph_data_new(datapoint, self.statistics, self.device,
-                                                    n_atoms=n_atoms)
+                                                    n_atoms=n_atoms, random_embeddings=random_embeddings, use_occurrence=use_occurrence, max_occurrence=max_occurrence)
 
                 # Transform graph to undirected representation, with feature indicating edge direction
                 data = ToUndirectedCustom(merge=False)(data)
@@ -156,10 +156,10 @@ class cardinality_estimator():
                 # Get graph representation of query
                 if inductive == 'full':
                     data, n_atoms = get_query_graph_data_new(datapoint, self.statistics, self.device, unknown_entity='true',
-                                                    n_atoms=n_atoms)
+                                                    n_atoms=n_atoms, random_embeddings=random_embeddings, use_occurrence=use_occurrence, max_occurrence=max_occurrence)
                 else:
                     data, n_atoms = get_query_graph_data_new(datapoint, self.statistics, self.device,
-                                                    n_atoms=n_atoms)
+                                                    n_atoms=n_atoms, random_embeddings=random_embeddings, use_occurrence=use_occurrence, max_occurrence=max_occurrence)
 
                 # Transform graph to undirected representation, with feature indicating edge direction
                 data = ToUndirectedCustom(merge=False)(data)
@@ -179,7 +179,7 @@ class cardinality_estimator():
 
             start_time_training = time.time()
 
-            for epoch in tqdm(range(epochs)):
+            for epoch in range(epochs):
                 start_time = time.time()
 
                 epoch_loss = 0
@@ -317,9 +317,9 @@ class cardinality_estimator():
             start = time.time()
             if inductive == 'full':
                 data = get_query_graph_data_new(datapoint, self.statistics, self.device,
-                                                unknown_entity='true')
+                                                unknown_entity='true', random_embeddings=random_embeddings, use_occurrence=use_occurrence, max_occurrence=max_occurrence)
             else:
-                data = get_query_graph_data_new(datapoint, self.statistics, self.device )
+                data = get_query_graph_data_new(datapoint, self.statistics, self.device, random_embeddings=random_embeddings, use_occurrence=use_occurrence, max_occurrence=max_occurrence)
             data = ToUndirectedCustom(merge=False)(data)
             data = data.to_homogeneous()
             data = data.to(self.device)
@@ -366,11 +366,11 @@ class cardinality_estimator():
         return n_atoms, start_time_training, training_end_time, preds, gts, sizes
 
 def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: str, train: bool = True,
-               inductive='false', DATASETPATH=None, n_train_queries=None, n_test_queries=None, epochs=None):
+               inductive='false', DATASETPATH=None, n_train_queries=None, n_test_queries=None, epochs=None, random_embeddings=False, use_occurrence=True, max_occurrence=None):
 
     # Total counter for preparation, i.e. data laoding and transforming to PyG graphs
     preparation_time = 0
-    assert inductive in ['false', 'full']
+    assert inductive in ['false', 'full', 'partial']
     model = cardinality_estimator(dataset, None, sim_measure="cosine", DATASETPATH=DATASETPATH)
 
     eval_folder = Path(f"{eval_folder}/GNCE")
@@ -395,8 +395,8 @@ def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: s
             train_data = json.load(f)
         with open(f"{DATASETPATH}{dataset}/{query_type}/disjoint_test.json") as f:
             test_data = json.load(f)
-        train_data = train_data[:]
-        test_data = test_data[:]
+        train_data = train_data[:n_train_queries]
+        test_data = test_data[:n_test_queries]
 
     preparation_time += time.time() - start_time
 
@@ -406,7 +406,7 @@ def train_GNCE(dataset: str, query_type: str, eval_folder:str, query_filename: s
 
 
     n_atoms, start_time_training, end_time_training, preds, gts, sizes = model.train_GNN(train_data, test_data, epochs=epochs, train=train, eval_folder=eval_folder, inductive=inductive,
-                    preparation_time=preparation_time, DATASETPATH=DATASETPATH)
+                    preparation_time=preparation_time, DATASETPATH=DATASETPATH, random_embeddings=random_embeddings, use_occurrence=use_occurrence, max_occurrence=max_occurrence)
 
     return n_atoms, start_time_training, end_time_training, preds, gts, sizes
 

@@ -118,7 +118,7 @@ class StatisticsLoader():
 
 
 
-def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='false', n_atoms: int = None):
+def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='false', n_atoms: int = None, random_embeddings=False, use_occurrence=True, max_occurrence=None):
     """
     This function is used to get the graph data object from a query graph
     :param query_graph: Dict representing the query graph of the form {"triples": [triple1, triple2, ...], "y": cardinality,
@@ -127,8 +127,13 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
     :param device: cpu or cuda
     :param unknown entity: Determines if an entity receives its embedding('false'), randomly, embedding
     or random vector('random') or always a random embedding('true')
+    :param random_embeddings: If True, use binary vector representations instead of embeddings for entities and predicates
+    :param use_occurrence: If True, use actual occurrence values; if False, use placeholder value of 1
+    :param max_occurrence: Maximum occurrence value for normalization. If None, uses 16018 (backward compatibility).
+                          Occurrence values are normalized using log normalization: log(occurrence+1)/log(max_occurrence+1)
     :return: Graph data object
     """
+    import math
 
     data = HeteroData()
     data = data.to(device)
@@ -137,6 +142,9 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
     n_entities = 0 # todo remove, only for testing
     n_edge_variables_random = random.randint(0, 5) # todo remove, for testing
     n_entities_random = random.randint(0, 5) # todo remove, only for testing
+    
+    # Set normalization factor for occurrence values
+    occurrence_norm_factor = max_occurrence if max_occurrence is not None else 16018
     node_embeddings = []
     # Embeddings for variables in edges or nodes
     # edge has an additional dimension to indicate the direction of the edge
@@ -212,15 +220,15 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                 raise
             try:
                 # Get the embedding of the predicate
-                if USE_EMBEDDING:
+                if USE_EMBEDDING and not random_embeddings:
                     feature_vector = statistics[triple[1].replace("<", "").replace(">", "")]["embedding"].copy()
                 else:
                     idx = int(triple[1].replace(">", "").split("/")[-1])
                     idx_bin = bin(idx)[2:].zfill(100)
                     feature_vector = [float(i) for i in idx_bin]
                 # Add the occurence of the predicate to the embedding
-                if USE_OCCURRENCE:
-                    feature_vector.append(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] / 16018)
+                if USE_OCCURRENCE and use_occurrence:
+                    feature_vector.append(math.log(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
                 else:
                     feature_vector.append(1)
                 # Add a dimension for the direction of the edge
@@ -230,14 +238,14 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                 data["entity", p, "entity"].edge_attr = ea
             except:
                 # Case if edge set does not exist yet
-                if USE_EMBEDDING:
+                if USE_EMBEDDING and not random_embeddings:
                     feature_vector = statistics[triple[1].replace("<", "").replace(">", "")]["embedding"].copy()
                 else:
                     idx = int(triple[1].replace(">", "").split("/")[-1])
                     idx_bin = bin(idx)[2:].zfill(100)
                     feature_vector = [float(i) for i in idx_bin]
-                if USE_OCCURRENCE:
-                    feature_vector.append(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] / 16018)
+                if USE_OCCURRENCE and use_occurrence:
+                    feature_vector.append(math.log(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
                 else:
                     feature_vector.append(1)
                 feature_vector.append(1)
@@ -259,9 +267,22 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                 n_entities_random +=1 #todo
                 node_embeddings.append(emb)
             else:
-                if unknown_entity == 'false':
+                if random_embeddings:
+                    # Use binary vector representation
+                    idx = int(s.replace(">", "").split("/")[-1])
+                    idx_bin = bin(idx)[2:].zfill(100)
+                    feature_vector = [float(i) for i in idx_bin]
+                    # Append occurrence information or placeholder
+                    if use_occurrence:
+                        feature_vector.append(math.log(statistics[s]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                    else:
+                        feature_vector.append(1)
+                elif unknown_entity == 'false':
                     feature_vector = statistics[s]["embedding"].copy()
-                    feature_vector.append(statistics[s]["occurence"] / 16018)
+                    if use_occurrence:
+                        feature_vector.append(math.log(statistics[s]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                    else:
+                        feature_vector.append(1)
                 elif unknown_entity == 'true':
                     feature_vector = unknown_entity_embedding.copy()
                     feature_vector.append(1)
@@ -271,7 +292,10 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                     # 70% chance of being True
                     if rand_num < 0.7:
                         feature_vector = statistics[s]["embedding"].copy()
-                        feature_vector.append(statistics[s]["occurence"] / 16018)
+                        if use_occurrence:
+                            feature_vector.append(math.log(statistics[s]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                        else:
+                            feature_vector.append(1)
                     else:
                         feature_vector = unknown_entity_embedding.copy()
                         feature_vector.append(1)
@@ -293,9 +317,22 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                 n_entities_random +=1 #todo
                 node_embeddings.append(emb)
             else:
-                if unknown_entity == 'false':
+                if random_embeddings:
+                    # Use binary vector representation
+                    idx = int(o.replace(">", "").split("/")[-1])
+                    idx_bin = bin(idx)[2:].zfill(100)
+                    feature_vector = [float(i) for i in idx_bin]
+                    # Append occurrence information or placeholder
+                    if use_occurrence:
+                        feature_vector.append(math.log(statistics[o]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                    else:
+                        feature_vector.append(1)
+                elif unknown_entity == 'false':
                     feature_vector = statistics[o]["embedding"].copy()
-                    feature_vector.append(statistics[o]["occurence"] / 16018)
+                    if use_occurrence:
+                        feature_vector.append(math.log(statistics[o]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                    else:
+                        feature_vector.append(1)
                 elif unknown_entity == 'true':
                     feature_vector = unknown_entity_embedding.copy()
                     feature_vector.append(1)
@@ -305,7 +342,10 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                     # 70% chance of being True
                     if rand_num < 0.7:
                         feature_vector = statistics[o]["embedding"].copy()
-                        feature_vector.append(statistics[o]["occurence"] / 16018)
+                        if use_occurrence:
+                            feature_vector.append(math.log(statistics[o]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                        else:
+                            feature_vector.append(1)
                     else:
                         feature_vector = unknown_entity_embedding.copy()
                         feature_vector.append(1)
@@ -365,13 +405,13 @@ def get_query_graph_data(query_graph, statistics, device):
                 raise
             try:
                 feature_vector = statistics[triple[1].replace("<", "").replace(">", "")]["embedding"].copy()
-                feature_vector.append(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] / 16018)
+                feature_vector.append(math.log(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
 
                 ea = torch.cat((data["entity", p, "entity"].edge_attr, torch.tensor([feature_vector])), dim=0)
                 data["entity", p, "entity"].edge_attr = ea
             except:
                 feature_vector = statistics[triple[1].replace("<", "").replace(">", "")]["embedding"].copy()
-                feature_vector.append(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] / 16018)
+                feature_vector.append(math.log(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
                 data["entity", p, "entity"].edge_attr = torch.tensor([feature_vector])
 
         # Adding the embeddings of s and o to
@@ -384,7 +424,7 @@ def get_query_graph_data(query_graph, statistics, device):
                 node_embeddings.append(emb)
             else:
                 feature_vector = statistics[s]["embedding"].copy()
-                feature_vector.append(statistics[s]["occurence"] / 16018)
+                feature_vector.append(math.log(statistics[s]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
                 node_embeddings.append(feature_vector)
         if not o in node_mapping.keys():
             node_mapping[o] = n_entities
@@ -395,7 +435,7 @@ def get_query_graph_data(query_graph, statistics, device):
                 node_embeddings.append(variable_embedding)
             else:
                 feature_vector = statistics[o]["embedding"].copy()
-                feature_vector.append(statistics[o]["occurence"] / 16018)
+                feature_vector.append(math.log(statistics[o]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
                 node_embeddings.append(feature_vector)
         try:
             tp = torch.cat(
