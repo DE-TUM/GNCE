@@ -3,7 +3,7 @@ name = "GNCE"
 version = "0.1.0"
 description = ""
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
+requires-python = ">=3.10,<3.11"
 dependencies = [
   "pyrdf2vec==0.2.3",
   "rdflib",
@@ -13,32 +13,20 @@ dependencies = [
   "matplotlib>=3.10.5",
   "nest_asyncio",
   "ninja>=1.13.0",
-  # macOS universal2 wheels use +pt28
-  "pyg-lib==0.4.0+pt28 ; sys_platform == 'darwin'",
-  # Linux/Windows CPU wheels use +pt28cpu
-  "pyg-lib==0.4.0+pt28cpu ; sys_platform == 'linux'",
-  "pyg-lib==0.4.0+pt28cpu ; sys_platform == 'win32'",
   "scikit-learn>=1.7.1",
   "scipy>=1.9.0,<1.12.0",
-  "torch",
+  "torch>=1.12.0,<2.0.0",
   "torch-geometric",
   "torch-scatter",
 ]
 
-[tool.uv.sources]
-# Force CPU-only PyTorch wheels
-torch = [{ index = "pytorch-cpu" }]
-# Fix: use hyphen to match the dependency name
-pyg-lib = [{ index = "pyg-flat-280-cpu" }]
-torch_scatter = [{ index = "pyg-flat-280-cpu" }]
+[tool.uv.extra-build-dependencies]
+torch-scatter = ["torch"]
+
+[tool.uv.sources.torch]
+index = "pytorch-cpu"
 
 [[tool.uv.index]]
 name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[[tool.uv.index]]
-name = "pyg-flat-280-cpu"
-url = "https://data.pyg.org/whl/torch-2.8.0+cpu.html"
-format = "flat"
 explicit = true
