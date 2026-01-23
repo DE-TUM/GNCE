@@ -117,12 +117,17 @@ class TripleConv(MessagePassing):
 
         # Switch i and j based on direction of triple:
         reverse = edge_attr[:, -1] == -1
+        edge_attr = edge_attr[:, :-1]
+
 
         if self.DIRECTIONAL:
-            x_i[reverse], x_j[reverse] = x_j[reverse], x_i[reverse]
+            # Create new tensors instead of in-place modification
+            x_i_new = x_i.clone()
+            x_j_new = x_j.clone()
+            x_i_new[reverse] = x_j[reverse]
+            x_j_new[reverse] = x_i[reverse]
+            return self.lin(torch.cat((x_i_new, edge_attr, x_j_new), 1)).relu()
 
-        #x_i[edge_attr[:, -1] == -1] = x_j[edge_attr[:, -1] == -1]
-        edge_attr = edge_attr[:, :-1]
 
 
         return self.lin(torch.cat((x_i, edge_attr, x_j), 1)).relu()

@@ -1,0 +1,32 @@
+data:
+  - dataset_name: "swdf-star"
+    query_type: "star"
+    queries_path: "..Joined_Queries.json"
+    embeddings_path: "..embeddings.json"
+    batch_size: 32
+    split: "train-val"
+    num_queries: 11000
+  - dataset_name: "swdf-path"
+    query_type: "path"
+    queries_path: "..Joined_Queries.json"
+    embeddings_path: "..embeddings.json"
+    batch_size: 32
+    split: "validation"
+    num_queries: 11000
+
+
+output_dir: "output_gnce/"
+epochs: 40
+learning_rate: 0.0001
+weight_decay: 0.0
+seed: 42
+device: "cpu"   # "cpu" | "cuda" | "auto"
+train_ratio: 0.8
+eval_every: 1
+save_every: 5
+
+random_embeddings: false
+use_occurrence: true
+max_occurrence: 22521
+
+

@@ -1,0 +1,22 @@
+dataset_name: "swdf"
+
+# Path to the KG file (.nt or .ttl)
+kg_file: "../GRAPH.nt"
+
+# SPARQL endpoint URL (if remote=true) or path to KG file
+sparql_endpoint: "../GRAPH.nt"
+
+# Whether to use a remote SPARQL endpoint or the KG file via rdflib
+remote: true
+
+# Base directory for saving embeddings output
+output_dir: "../"
+
+# Use all entities from KG file (true) or extract from query files (false)
+use_all_entities: true
+
+# Query files to extract entities from (used when use_all_entities is false)
+query_files:
+  - "../star/Joined_Queries.json"
+  - "../path/Joined_Queries.json"
+

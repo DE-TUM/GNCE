@@ -1,6 +1,6 @@
 [project]
 name = "GNCE"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
 readme = "README.md"
 requires-python = ">=3.10,<3.11"
@@ -18,7 +18,16 @@ dependencies = [
   "torch>=1.12.0,<2.0.0",
   "torch-geometric",
   "torch-scatter",
+  "pyyaml>=6.0.3",
 ]
+
+[project.scripts]
+gnce-train = "scripts.train:main"
+gnce-embeddings = "scripts.generate_embeddings:main"
+gnce-visualize = "scripts.visualize_embeddings:main"
+
+[tool.setuptools.packages.find]
+include = ["src"]
 
 [tool.uv.extra-build-dependencies]
 torch-scatter = ["torch"]
