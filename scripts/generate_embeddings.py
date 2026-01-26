@@ -1,6 +1,15 @@
 import argparse
 import random
 
+import pyrdf2vec.utils.validation as pyrdf2vec_validation
+
+def _patched_is_valid_url(url: str) -> bool:
+    """Accept any URL that looks like a valid HTTP URL."""
+    return url.startswith("http://") or url.startswith("https://")
+
+pyrdf2vec_validation.is_valid_url = _patched_is_valid_url
+
+
 from pyrdf2vec.graphs import KG, Vertex
 from pyrdf2vec import RDF2VecTransformer
 from pyrdf2vec.embedders import Word2Vec
@@ -14,6 +23,27 @@ import yaml
 
 def uri_to_id(uri):
     return uri.split('/')[-1]
+
+
+def get_all_kg_entities_remote(graph, limit=10000000):
+    """Get all entities (subjects and objects) from remote KG."""
+    import requests
+    
+    endpoint = graph.location
+    # Get all distinct subjects and objects that are URIs
+    query = """
+    SELECT DISTINCT ?e WHERE {
+        { ?e ?p ?o . FILTER(isIRI(?e)) }
+        UNION
+        { ?s ?p ?e . FILTER(isIRI(?e)) }
+    }
+    """
+    
+    resp = requests.get(endpoint, params={"query": query}, headers={"Accept": "application/json"}, timeout=300)
+    if resp.status_code == 200:
+        results = resp.json()
+        return {binding["e"]["value"] for binding in results["results"]["bindings"]}
+    return set()
 
 
 uri_query = """
@@ -110,16 +140,24 @@ def get_embeddings(dataset_name, kg_file, entities=None, remote=True, sparql_end
         json.dump(occurrences, fp)
 
     # Filter entities to only those present in the KG
-    valid_entities = {v.name for v in GRAPH._entities}
-    original_count = len(entities)
-    invalid_entities = [e for e in entities if e not in valid_entities]
-    entities = [e for e in entities if e in valid_entities]
-    print(f"Filtered {original_count} entities down to {len(entities)} existing in the KG.")
-
-    # Generate the embeddings using fit_transform (more efficient than fit + transform)
-    print("Starting to fit and transform model")
-    embeddings_result = transformer.fit_transform(GRAPH, entities)
-    print("Finished fitting model")
+    if GRAPH._is_remote:
+        print("Fetching all entities from remote KG...")
+        valid_entities = get_all_kg_entities_remote(GRAPH)
+        print(f"Found {len(valid_entities)} entities in remote KG")
+        original_count = len(entities)
+        invalid_entities = [e for e in entities if e not in valid_entities]
+        entities = [e for e in entities if e in valid_entities]
+        print(f"Filtered {original_count} entities down to {len(entities)} existing in the KG.")
+    else:
+        valid_entities = {v.name for v in GRAPH._entities}
+        original_count = len(entities)
+        invalid_entities = [e for e in entities if e not in valid_entities]
+        entities = [e for e in entities if e in valid_entities]
+        print(f"Filtered {original_count} entities down to {len(entities)} existing in the KG.")
+        # Generate the embeddings using fit_transform (more efficient than fit + transform)
+        print("Starting to fit and transform model")
+        embeddings_result = transformer.fit_transform(GRAPH, entities)
+        print("Finished fitting model")
 
     # Access the underlying Word2Vec model to get predicate embeddings
     word2vec_model = transformer.embedder._model
