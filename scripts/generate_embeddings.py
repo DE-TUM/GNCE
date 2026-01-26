@@ -154,10 +154,10 @@ def get_embeddings(dataset_name, kg_file, entities=None, remote=True, sparql_end
         invalid_entities = [e for e in entities if e not in valid_entities]
         entities = [e for e in entities if e in valid_entities]
         print(f"Filtered {original_count} entities down to {len(entities)} existing in the KG.")
-        # Generate the embeddings using fit_transform (more efficient than fit + transform)
-        print("Starting to fit and transform model")
-        embeddings_result = transformer.fit_transform(GRAPH, entities)
-        print("Finished fitting model")
+    # Generate the embeddings using fit_transform (more efficient than fit + transform)
+    print("Starting to fit and transform model")
+    embeddings_result = transformer.fit_transform(GRAPH, entities)
+    print("Finished fitting model")
 
     # Access the underlying Word2Vec model to get predicate embeddings
     word2vec_model = transformer.embedder._model
