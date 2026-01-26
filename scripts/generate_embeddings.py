@@ -106,7 +106,7 @@ def get_embeddings(dataset_name, kg_file, entities=None, remote=True, sparql_end
         #Create the RDF2vec model
     transformer = RDF2VecTransformer(
         Word2Vec(epochs=10, vector_size=100),
-        walkers=[RandomWalker(4, max_walks=5, with_reverse=True, n_jobs=12, md5_bytes=None)],
+        walkers=[RandomWalker(4, max_walks=5, with_reverse=True, n_jobs=2, md5_bytes=None)],
         verbose=2
     )
 
@@ -199,8 +199,11 @@ def get_embeddings(dataset_name, kg_file, entities=None, remote=True, sparql_end
     # Use output_dir from config if provided
     if output_dir:
         embeddings_json_path = os.path.join(output_dir, dataset_name, f"{dataset_name}_embeddings.json")
+        os.makedirs(os.path.dirname(embeddings_json_path), exist_ok=True) 
+
     else:
         embeddings_json_path = f"{dataset_name}_embeddings.json"
+        os.makedirs(os.path.dirname(embeddings_json_path), exist_ok=True) 
     
     with open(embeddings_json_path, "w") as f:
         json.dump(all_embeddings_with_occurrences, f)
