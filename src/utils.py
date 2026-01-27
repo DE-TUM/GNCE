@@ -146,14 +146,14 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
 
         if not stat or "embedding" not in stat:
             # Fixed random per missing predicate (cached)
-            vec = missing_predicate_cache.setdefault(pred_key, rng.rand(100).tolist())
+            vec = missing_predicate_cache.setdefault(pred_key, rng.rand(100).tolist()).copy()
             occ = 0
-            print(f"MISSING {pred_key}: vec len = {len(vec)}")  # ADD THIS
+            #print(f"MISSING {pred_key}: vec len = {len(vec)}")  # ADD THIS
 
         else:
             vec = stat["embedding"].copy()
             occ = stat.get("occurence", 0)
-            print(f"FOUND {pred_key}: vec len = {len(vec)}")  # ADD THIS
+            #print(f"FOUND {pred_key}: vec len = {len(vec)}")  # ADD THIS
 
         return vec, occ
 
