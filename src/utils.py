@@ -264,7 +264,7 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                     idx_bin = bin(idx)[2:].zfill(100)
                     feature_vector = [float(i) for i in idx_bin]
                 if USE_OCCURRENCE and use_occurrence:
-                    feature_vector.append(math.log(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                    feature_vector.append(math.log(occ+ 1))
                 else:
                     feature_vector.append(1)
                 feature_vector.append(1)
