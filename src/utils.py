@@ -135,6 +135,25 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
     """
     import math
 
+    rng = np.random.RandomState(0)
+    missing_predicate_cache = {}  # per-call cache
+
+    def _get_pred_embedding(pred_key: str):
+        try:
+            stat = statistics[pred_key]
+        except Exception:
+            stat = None
+
+        if not stat or "embedding" not in stat:
+            # Fixed random per missing predicate (cached)
+            vec = missing_predicate_cache.setdefault(pred_key, rng.rand(100).tolist())
+            occ = 0
+        else:
+            vec = stat["embedding"].copy()
+            occ = stat.get("occurence", 0)
+
+        return vec, occ
+
     data = HeteroData()
     data = data.to(device)
     node_mapping = {}
@@ -221,14 +240,14 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
             try:
                 # Get the embedding of the predicate
                 if USE_EMBEDDING and not random_embeddings:
-                    feature_vector = statistics[triple[1].replace("<", "").replace(">", "")]["embedding"].copy()
+                    feature_vector, occ = _get_pred_embedding(triple[1].replace("<", "").replace(">", ""))
                 else:
                     idx = int(triple[1].replace(">", "").split("/")[-1])
                     idx_bin = bin(idx)[2:].zfill(100)
                     feature_vector = [float(i) for i in idx_bin]
                 # Add the occurence of the predicate to the embedding
                 if USE_OCCURRENCE and use_occurrence:
-                    feature_vector.append(math.log(statistics[triple[1].replace("<", "").replace(">", "")]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                    feature_vector.append(math.log(occ + 1))
                 else:
                     feature_vector.append(1)
                 # Add a dimension for the direction of the edge
@@ -239,7 +258,7 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
             except:
                 # Case if edge set does not exist yet
                 if USE_EMBEDDING and not random_embeddings:
-                    feature_vector = statistics[triple[1].replace("<", "").replace(">", "")]["embedding"].copy()
+                    feature_vector, occ = _get_pred_embedding(triple[1].replace("<", "").replace(">", ""))
                 else:
                     idx = int(triple[1].replace(">", "").split("/")[-1])
                     idx_bin = bin(idx)[2:].zfill(100)
@@ -274,13 +293,13 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                     feature_vector = [float(i) for i in idx_bin]
                     # Append occurrence information or placeholder
                     if use_occurrence:
-                        feature_vector.append(math.log(statistics[s]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                        feature_vector.append(math.log(statistics[s]["occurence"] + 1))
                     else:
                         feature_vector.append(1)
                 elif unknown_entity == 'false':
                     feature_vector = statistics[s]["embedding"].copy()
                     if use_occurrence:
-                        feature_vector.append(math.log(statistics[s]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                        feature_vector.append(math.log(statistics[s]["occurence"] + 1))
                     else:
                         feature_vector.append(1)
                 elif unknown_entity == 'true':
@@ -293,7 +312,7 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                     if rand_num < 0.7:
                         feature_vector = statistics[s]["embedding"].copy()
                         if use_occurrence:
-                            feature_vector.append(math.log(statistics[s]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                            feature_vector.append(math.log(statistics[s]["occurence"] + 1))
                         else:
                             feature_vector.append(1)
                     else:
@@ -324,13 +343,13 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                     feature_vector = [float(i) for i in idx_bin]
                     # Append occurrence information or placeholder
                     if use_occurrence:
-                        feature_vector.append(math.log(statistics[o]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                        feature_vector.append(math.log(statistics[o]["occurence"] + 1))
                     else:
                         feature_vector.append(1)
                 elif unknown_entity == 'false':
                     feature_vector = statistics[o]["embedding"].copy()
                     if use_occurrence:
-                        feature_vector.append(math.log(statistics[o]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                        feature_vector.append(math.log(statistics[o]["occurence"] + 1))
                     else:
                         feature_vector.append(1)
                 elif unknown_entity == 'true':
@@ -343,7 +362,7 @@ def get_query_graph_data_new(query_graph, statistics, device, unknown_entity='fa
                     if rand_num < 0.7:
                         feature_vector = statistics[o]["embedding"].copy()
                         if use_occurrence:
-                            feature_vector.append(math.log(statistics[o]["occurence"] + 1) / math.log(occurrence_norm_factor + 1))
+                            feature_vector.append(math.log(statistics[o]["occurence"] + 1))
                         else:
                             feature_vector.append(1)
                     else:
