@@ -138,10 +138,6 @@ class GNCEQueries(InMemoryDataset):
                 max_occurrence=self.max_occurrence,
             )
 
-            # Debug: print edge_attr dimensions for each edge type
-            for edge_type in hetero.edge_types:
-                ea = hetero[edge_type].edge_attr
-                print(f"Edge type {edge_type}: edge_attr shape = {ea.shape}")
 
             # Convert to homogeneous and make undirected with direction attribute
             g = hetero.to_homogeneous()
