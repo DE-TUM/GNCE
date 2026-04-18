@@ -9,7 +9,7 @@ from typing import List, Literal, Optional
 @dataclass
 class GNCEDataConfig:
     dataset_name: str
-    query_type: Literal["star", "path"] = "star"
+    query_type: str = "star"
     queries_path: str = ""
     embeddings_path: str = ""
     batch_size: int = 32

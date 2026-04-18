@@ -418,13 +418,16 @@ def train(config: GNCEConfig, run_dir: Path):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", type=str, default="configs/gnce_local.yaml")
+    parser.add_argument("--run-name", type=str, default=None, help="Custom run directory name (default: run_<timestamp>)")
+    args = parser.parse_args()
 
-    config_path = "configs/gnce_local.yaml"
-
-    config = load_config(config_path)
+    config = load_config(args.config)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    run_dir = Path(config.output_dir) / f"run_{timestamp}"
+    name = f"{args.run_name}_{timestamp}" if args.run_name else f"run_{timestamp}"
+    run_dir = Path(config.output_dir) / name
     run_dir.mkdir(parents=True, exist_ok=True)
 
     train(config, run_dir)
